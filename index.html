@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TPI Data Cleaner</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TPI Cleaner">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%A7%B9%3C/text%3E%3C/svg%3E">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{--bg:#f8fafc;--card:#fff;--text:#1e293b;--mut:#64748b;--bd:#cbd5e1;--hd:#e2e8f0;--del:#fed7d7;--delt:#991b1b;--g1:#fef08a;--g2:#bae6fd;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--mut:#94a3b8;--bd:#475569;--hd:#334155;--del:#7f1d1d;--delt:#fecaca;--g1:#854d0e;--g2:#075985;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--mut:#94a3b8;--bd:#475569;--hd:#334155;--del:#7f1d1d;--delt:#fecaca;--g1:#854d0e;--g2:#075985;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:linear-gradient(90deg,#000,#ff5c00);color:#fff;padding:18px 20px}header small{font-weight:700;font-size:11px;letter-spacing:.5px}header h1{margin:4px 0 0;font-size:28px;font-weight:900}
+main{max-width:900px;margin:0 auto;padding:16px}
+label.l{display:block;font-weight:700;margin:14px 0 6px}
+button{border:0;border-radius:6px;padding:10px 16px;font:700 14px inherit;color:#fff;cursor:pointer;background:#2563eb}
+button:disabled{opacity:.5}.sm{padding:6px 10px;font-size:12px}.ind{background:#4f46e5}.grn{background:#16a34a}.red{background:#dc2626}.teal{background:#0d9488}.gray{background:#94a3b8}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:10px;margin:10px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1 1 140px}.row.n>*{flex:0 0 auto}
+input[type=text],select{width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--text);font:inherit}
+.mut{color:var(--mut);font-size:13px}.hl{padding:4px 8px;border-radius:4px;display:inline-block}
+#bar{height:8px;background:var(--hd);border-radius:4px;margin-top:12px;overflow:hidden}#bar i{display:block;height:100%;width:0;background:#2563eb}
+dialog{width:min(960px,96vw);max-height:92vh;background:var(--bg);color:var(--text);border:1px solid var(--bd);border-radius:10px;padding:14px}
+dialog::backdrop{background:rgba(0,0,0,.5)}.sc{overflow:auto;max-height:60vh;border:1px solid var(--bd);margin:10px 0}
+table{border-collapse:collapse;font-size:12px}th,td{border:1px solid var(--bd);padding:6px 8px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;background:var(--card)}
+th{background:var(--hd);cursor:pointer;position:sticky;top:0}th[data-r]{left:0;z-index:1}.x{background:var(--del)!important;color:var(--delt)}
+.amb{background:#d97706}.tbl{border:1px solid var(--bd);background:var(--card);max-height:55vh;overflow:auto;margin:8px 0}
+.gr{display:grid;align-items:center;min-width:760px}.m{grid-template-columns:36px 24fr 18fr 15fr 15fr 145px;min-width:820px}.c{grid-template-columns:20fr 30fr 25fr 12fr;min-width:640px}
+.gr>div{padding:6px 12px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.th{background:var(--hd);font-weight:700;font-size:13px;position:sticky;top:0;z-index:5}
+#jobs>.tr:nth-child(odd),#cfgl>.tr:nth-child(odd){background:var(--bg)}#jobs>.tr:nth-child(even),#cfgl>.tr:nth-child(even){background:var(--card)}
+.leg{display:flex;gap:8px;align-items:center;margin:8px 0}.sw{flex:0 0 18px;height:18px;border:1px solid var(--bd);background:var(--g1)}
+#pvtab th:first-child{position:sticky;left:0;z-index:1;text-align:center;min-width:75px}#pvtab tr:first-child th:first-child{z-index:3}
+</style></head><body>
+<header><small>PROFESSIONAL WORKBOOK CLEANER</small><h1>TPI DATA CLEANER</h1></header>
+<main>
+<label class="l">1. Select an Excel file or source folder</label>
+<input id="pick" type="file" multiple accept=".xlsx,.xls,.xlsm" hidden><input id="pickdir" type="file" webkitdirectory multiple hidden>
+<div class="row"><input type="text" id="srcv" readonly style="flex:3 1 200px"><button class="ind" style="flex:0 0 auto" onclick="pick.click()">Select File</button><button class="amb" style="flex:0 0 auto" onclick="pickdir.click()">Select Folder</button></div>
+<label class="l">2. Choose the output directory</label>
+<div class="row"><input type="text" id="outv" readonly placeholder="No folder chosen: files will download instead" style="flex:3 1 200px"><button class="amb" style="flex:0 0 auto" onclick="pickOut()">Select Folder</button></div>
+<p class="mut">Check sheets to process. Identical workbook names are auto-highlighted with alternating soft colors per group. Click Preview to manage rows/columns interactively.</p>
+<div class="tbl"><div class="gr m th"><div>Use</div><div>Workbook</div><div>Worksheet</div><div>Rows to delete</div><div>Cols to delete</div><div>Actions</div></div><div id="jobs"></div></div>
+<div class="row n"><button id="go" disabled onclick="configure()">Configure & Convert…</button><button id="save" class="grn" hidden onclick="doSave()"></button></div>
+<div id="bar" hidden><i></i></div>
+<p id="st" class="mut" style="text-align:center">Select Excel files to begin.</p>
+</main>
+
+<dialog id="pv"><b id="pvt"></b>
+<div style="font-weight:700;font-size:13px;margin:6px 0">• Click any Column Header (or hold Shift for range).<br>• Click any Row Number (or hold Shift for range)</div>
+<div class="tbl" style="max-height:50vh"><table id="pvtab"></table></div>
+<div class="row n"><b class="mut">Rows to delete:</b><input type="text" id="pvr" style="width:130px"><b class="mut">Cols to delete:</b><input type="text" id="pvc" style="width:130px"><span style="flex:1"></span><button class="grn" onclick="pv.close()">Save & Close</button></div></dialog>
+
+<dialog id="cfg"><b style="font-size:18px">Configure File Names, Sheet Grouping & Formats</b>
+<div class="leg mut"><span class="sw"></span>Rows highlighted with matching colors share identical output filenames and will be bundled together.</div>
+<div class="tbl"><div class="gr c th"><div>Source Sheet</div><div>Output File Name (Matching names group together)</div><div>Output Sheet Name</div><div>Format</div></div><div id="cfgl"></div></div>
+<div class="row n" style="justify-content:space-between"><button class="red" onclick="cfg.close()">Cancel</button><button class="grn" onclick="start()">Start Conversion</button></div></dialog>
+
+<script>
+const $=s=>document.querySelector(s), tick=()=>new Promise(r=>setTimeout(r,20));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&','<':'<','>':'>','"':'"'}[c]));
+let jobs=[], files={}, items=[], pending=[];
+const status=t=>$('#st').textContent=t, progress=p=>{$('#bar').hidden=p===null;if(p!==null)$('#bar i').style.width=p*100+'%'};
+
+// ---------- Helpers ----------
+const indexToCol=n=>{let r='';while(n>0){const m=(n-1)%26;r=String.fromCharCode(65+m)+r;n=Math.floor((n-1)/26)}return r};
+const colToIndex=s=>{s=s.trim().toUpperCase();if(/^\d+$/.test(s)){const v=+s;if(v<1)throw 0;return v}if(!/^[A-Z]+$/.test(s))throw 0;return[...s].reduce((n,c)=>n*26+c.charCodeAt(0)-64,0)};
+const rowConv=s=>{const v=parseInt(s.trim(),10);if(isNaN(v)||v<1)throw 0;return v};
+const formatSet=set=>{const n=[...set].sort((a,b)=>a-b),o=[];let s=n[0],e=n[0];for(const x of n.slice(1)){if(x===e+1)e=x;else{o.push(s===e?`${s}`:`${s}-${e}`);s=e=x}}if(n.length)o.push(s===e?`${s}`:`${s}-${e}`);return o.join(', ')};
+const parseList=(t,conv,msg)=>{const res=new Set();for(let p of t.trim().split(',')){p=p.trim();if(!p)continue;try{if(p.includes('-')){const q=p.split('-');if(q.length!==2)throw 0;const a=conv(q[0]),b=conv(q[1]);if(b<a)throw 0;for(let i=a;i<=b;i++)res.add(i)}else res.add(conv(p))}catch{throw new Error(`'${p}' is invalid. ${msg}`)}}return res};
+const parseRows=t=>parseList(t,rowConv,'Use formats like 1, 3, 7-10.'), parseCols=t=>parseList(t,colToIndex,'Use column numbers or letters (e.g., A, B, 1-3).');
+const cleanHeaders=vals=>{const seen={};return vals.map((v,i)=>{let b;if(v==null||!String(v).trim())b=`Column ${i+1}`;else b=String(v).replace(/\(% \)/g,'').replace(/\(₱\)/g,'').replace(/'/g,'').trim()||`Column ${i+1}`;seen[b]=(seen[b]||0)+1;return seen[b]===1?b:`${b}_${seen[b]}`})};
+const processSheet=(ws,rows,cols)=>{
+  const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true}),kept=[];let w=0;
+  for(let i=0;i<data.length;i++){if(rows.has(i+1))continue;kept.push(data[i]);if(data[i].length>w)w=data[i].length}
+  if(!kept.length)return[];
+  const headers=cleanHeaders(Array.from({length:w},(_,i)=>kept[0][i])),has=new Array(w).fill(false),body=new Array(kept.length-1);
+  for(let r=1;r<kept.length;r++){const src=kept[r],out=new Array(w);for(let c=0;c<w;c++){let v=src[c];if(v==null||(typeof v==='string'&&!v.trim()))v=null;else has[c]=true;out[c]=v}body[r-1]=out}
+  const keep=[];for(let c=0;c<w;c++){if(cols.has(c+1))continue;if(headers[c].startsWith('Column ')&&!has[c])continue;keep.push(c)}
+  return[keep.map(c=>headers[c]),...body.map(r=>keep.map(c=>r[c]))];
+};
+const groupColor=names=>{const cnt={},map={};let t=0;names.forEach(n=>{const k=n.trim().toLowerCase();cnt[k]=(cnt[k]||0)+1});names.forEach(n=>{const k=n.trim().toLowerCase();if(cnt[k]>1&&!map[k])map[k]=['var(--g1)','var(--g2)'][t++%2]});return n=>map[n.trim().toLowerCase()]};
+
+// ---------- Load files ----------
+const loadFiles=async e=>{
+  const all=[...e.target.files],isDir=e.target.id==='pickdir';
+  const list=all.filter(f=>/\.(xlsx|xls|xlsm)$/i.test(f.name)&&!f.name.startsWith('~$')&&(!isDir||f.webkitRelativePath.includes('/'))).sort((a,b)=>a.name.localeCompare(b.name)),errs=[];
+  $('#srcv').value=isDir?(all[0]?.webkitRelativePath.split('/')[0]||''):list.map(f=>f.name).join(', ');
+  if(!list.length){e.target.value='';return alert('No valid Excel files were discovered.')}
+ jobs=[];files={};$('#go').disabled=true;
+  for(let i=0;i<list.length;i++){
+    const f=list[i];status(`Reading sheet names ${i+1} of ${list.length}…`);await tick();
+    try{const names=XLSX.read(await f.arrayBuffer(),{type:'array',bookSheets:true}).SheetNames;files[f.name]=f;
+      names.forEach(s=>jobs.push({id:f.name+'|'+s,file:f.name,stem:f.name.replace(/\.[^.]+$/,''),sheet:s,sel:true,rows:'',cols:''}))}
+    catch(x){errs.push(`${f.name}: ${x.message}`)}
+  }
+  render();status(`Loaded ${Object.keys(files).length} workbook(s) and ${jobs.length} worksheet(s).`);
+  if(errs.length)alert('Loading warnings:\n'+errs.join('\n'));e.target.value='';
+};
+$('#pick').onchange=$('#pickdir').onchange=loadFiles;
+function render(){
+  const col=groupColor(jobs.map(j=>j.stem));$('#go').disabled=!jobs.length;
+  $('#jobs').innerHTML=jobs.map((j,i)=>{const g=col(j.stem);return `<div class="gr m tr"><div><input type="checkbox" data-i="${i}" data-k="sel" ${j.sel?'checked':''}></div>
+  <div style="${g?`background:${g};font-weight:700`:''}">${esc(j.file)}</div><div>${esc(j.sheet)}</div>
+  <div><input type="text" id="r${i}" value="${esc(j.rows)}" data-i="${i}" data-k="rows"></div><div><input type="text" id="c${i}" value="${esc(j.cols)}" data-i="${i}" data-k="cols"></div>
+  <div class="row n" style="gap:4px;flex-wrap:nowrap"><button class="sm teal" onclick="preview(${i})">Preview</button><button class="sm red" onclick="removeJob(${i})">Delete</button></div></div>`}).join('');
+}
+$('#jobs').oninput=$('#jobs').onchange=e=>{const t=e.target,j=jobs[t.dataset.i];if(j)j[t.dataset.k]=t.type==='checkbox'?t.checked:t.value};
+function removeJob(i){const j=jobs[i];if(jobs.filter(x=>x.file===j.file).length<=1)return alert('Cannot delete the only remaining sheet in the workbook.');if(confirm(`Remove '${j.sheet}' from '${j.file}'?`)){jobs.splice(i,1);render()}}
+
+// ---------- Preview ----------
+let pvJob=null,pvI=0,pvData=[],lastC=null,lastR=null;
+const sf=(f,t)=>{try{return f(t)}catch{return new Set}};
+function syncPv(){$('#pvr').value=pvJob.rows;$('#pvc').value=pvJob.cols;$('#r'+pvI).value=pvJob.rows;$('#c'+pvI).value=pvJob.cols}
+async function preview(i){
+  pvJob=jobs[i];pvI=i;lastC=lastR=null;$('#pvt').textContent=`Preview & Range Selection: ${pvJob.file} [${pvJob.sheet}]`;$('#pvtab').innerHTML='Loading…';syncPv();pv.showModal();
+  const wb=XLSX.read(await files[pvJob.file].arrayBuffer(),{type:'array',sheets:pvJob.sheet,sheetRows:35,cellDates:true});
+  pvData=XLSX.utils.sheet_to_json(wb.Sheets[pvJob.sheet],{header:1,defval:'',raw:false});drawPv();
+}
+function drawPv(){
+  const R=sf(parseRows,pvJob.rows),C=sf(parseCols,pvJob.cols),w=pvData.reduce((m,r)=>Math.max(m,r.length),0);
+  $('#pvtab').innerHTML=`<tr><th>Row #</th>${Array.from({length:w},(_,c)=>`<th data-c="${c+1}">Col ${c+1} (${indexToCol(c+1)})${C.has(c+1)?' [DEL]':''}</th>`).join('')}</tr>`+
+  pvData.map((r,ri)=>`<tr><th data-r="${ri+1}" class="${R.has(ri+1)?'x':''}">Row ${ri+1}</th>${Array.from({length:w},(_,c)=>`<td data-c="${c+1}" class="${R.has(ri+1)?'x':''}">${esc(r[c]??'')}</td>`).join('')}</tr>`).join('');
+}
+$('#pvtab').onclick=e=>{const el=e.target.closest('[data-c],[data-r]');if(!el)return;
+  const isR=el.dataset.r!==undefined,s=sf(isR?parseRows:parseCols,isR?pvJob.rows:pvJob.cols),n=+(isR?el.dataset.r:el.dataset.c),last=isR?lastR:lastC;
+  if(e.shiftKey&&last!=null){for(let k=Math.min(last,n);k<=Math.max(last,n);k++)s.add(k)}
+  else{s.has(n)?s.delete(n):s.add(n);isR?lastR=n:lastC=n}
+  pvJob[isR?'rows':'cols']=formatSet(s);syncPv();drawPv()};
+$('#pvr').oninput=()=>{pvJob.rows=$('#pvr').value;$('#r'+pvI).value=pvJob.rows;drawPv()};
+$('#pvc').oninput=()=>{pvJob.cols=$('#pvc').value;$('#c'+pvI).value=pvJob.cols;drawPv()};
+
+// ---------- Export configuration ----------
+function configure(){
+  const sel=jobs.filter(j=>j.sel);if(!sel.length)return alert('Please select at least one worksheet to convert.');
+  try{sel.forEach(j=>{parseRows(j.rows);parseCols(j.cols)})}catch(e){return alert(e.message)}
+  items=sel.map(j=>({...j,fn:j.stem,sn:j.sheet,fmt:'excel'}));drawCfg();cfg.showModal();
+}
+function drawCfg(){
+  const col=groupColor(items.map(j=>j.stem));
+  $('#cfgl').innerHTML=items.map((j,i)=>{const g=col(j.stem);return `<div class="gr c tr"><div style="font-weight:700;${g?`background:${g}`:''}">${esc(j.file)} [${esc(j.sheet)}]</div>
+  <div><input type="text" value="${esc(j.fn)}" data-i="${i}" data-k="fn"></div><div><input type="text" value="${esc(j.sn)}" data-i="${i}" data-k="sn"></div>
+  <div><select data-i="${i}" data-k="fmt"><option value="excel"${j.fmt==='excel'?' selected':''}>excel</option><option value="csv"${j.fmt==='csv'?' selected':''}>csv</option></select></div></div>`}).join('');
+}
+$('#cfgl').onchange=e=>{const t=e.target;items[t.dataset.i][t.dataset.k]=t.value};
+
+// ---------- Convert (Optimized to load all sheets fully) ----------
+async function start(){
+  if(items.some(j=>!j.fn.trim()||!j.sn.trim()))return alert('File names and sheet names cannot be left blank.');
+  cfg.close();$('#go').disabled=true;$('#save').hidden=true;pending=[];
+  const outs=[],bundles={},errs=[],by={};let done=0,step=0;
+  items.forEach(j=>(by[j.file]??=[]).push(j));
+  for(const[file,list]of Object.entries(by)){
+    status(`Reading ${file}…`);progress(step/items.length);await tick();let wb;
+    try{
+      // Read all sheets fully without filtering out other sheets
+      wb=XLSX.read(await files[file].arrayBuffer(),{type:'array',cellDates:true,cellText:false,cellStyles:false});
+    }
+    catch(e){errs.push(`${file}: ${e.message}`);step+=list.length;continue}
+    for(const j of list){
+      status(`Processing ${++step} of ${items.length}: ${j.file} — ${j.sheet}`);await tick();
+      try{
+        const ws=wb.Sheets[j.sheet];
+        if(!ws)throw new Error(`Sheet '${j.sheet}' not found in workbook.`);
+        const aoa=processSheet(ws,parseRows(j.rows),parseCols(j.cols));
+        if(j.fmt==='excel')(bundles[j.fn.trim()]??=[]).push([j.sn.trim().replace(/[\\/?*[\]:]/g,'_').slice(0,31),aoa]);
+        else outs.push({name:`${j.fn.trim()}_${j.sn.trim()}.csv`,blob:new Blob(['\uFEFF'+XLSX.utils.sheet_to_csv(XLSX.utils.aoa_to_sheet(aoa))],{type:'text/csv'})});
+        done++;
+      }catch(e){errs.push(`${j.file} — ${j.sheet}: ${e.message}`)}
+      progress(step/items.length);
+    }
+  }
+  for(const[name,sheets]of Object.entries(bundles)){
+    try{const wb=XLSX.utils.book_new();sheets.forEach(([sn,aoa])=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),sn));
+      outs.push({name:`${name}.xlsx`,blob:new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})])})}
+    catch(e){errs.push(`Excel bundle '${name}': ${e.message}`)}
+  }
+  progress(null);$('#go').disabled=false;pending=outs;let saved='';
+  if(outs.length&&outDir){try{await outDir.requestPermission({mode:'readwrite'});await writeToDir(outs);saved=` Saved to “${outDir.name}”.`;pending=[]}catch(e){errs.push('Saving to folder: '+e.message)}}
+  status((errs.length?`Finished: ${done} processed, ${errs.length} error(s).`:`Success! ${done} worksheet(s) converted.`)+saved);
+  if(pending.length){$('#save').textContent=pending.length===1?`Save ${pending[0].name}`:`Save ${pending.length} files (zip)`;$('#save').hidden=false}
+  if(errs.length)alert('Errors:\n'+errs.join('\n'));
+}
+
+function download(blob,name){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),60000);
+}
+async function doSave(){
+  try{
+    let name,blob;
+    if(pending.length===1){name=pending[0].name;blob=pending[0].blob}
+    else{const z=new JSZip();pending.forEach(o=>z.file(o.name,o.blob));name='TPI_Cleaned.zip';blob=await z.generateAsync({type:'blob',compression:'STORE'})}
+    const file=new File([blob],name,{type:blob.type||'application/octet-stream'});
+    if(/iPhone|iPad|Android/i.test(navigator.userAgent)&&navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file]});status('Saved.');return}
+      catch(e){if(e.name==='AbortError')return}
+    }
+    download(blob,name);status('Saved to your downloads.');
+  }catch(e){alert('Could not save: '+e.message)}
+}
+let outDir=null;
+async function pickOut(){
+  if(!window.showDirectoryPicker)return alert('This browser can’t save into a chosen folder (it works in Chrome or Edge on a computer or Android). Files will be downloaded instead.');
+  try{outDir=await showDirectoryPicker({mode:'readwrite'});$('#outv').value=outDir.name}catch(e){}
+}
+async function writeToDir(list){for(const o of list){const fh=await outDir.getFileHandle(o.name,{create:true}),w=await fh.createWritable();await w.write(o.blob);await w.close()}}
+</script></body></html>
